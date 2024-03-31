@@ -120,7 +120,6 @@ def display_passwords():
         password_text = password["Password"]
         tree.insert("", "end", values=(idx, source, username, "*" * len(password_text)))
     
-
 def paste_user():
     # Paste the username from clipboard into the entry field
     entry_username.delete(0, "end")
@@ -258,13 +257,9 @@ def save_password(password):
         json.dump(data, json_file)
 
 def change_password(source,password,username,new_password,new_username,new_source):
-    i = 0
-    print("Changing password...")
     with open("passwords.json", "r") as json_file:
         data = json.load(json_file)
     for item in data:
-        print(source, username, password, new_password, new_username, new_source, i)
-        i = i+1
         if item["Source"] == source and item["Username"] == username and item["Password"] == password:
             print("found")
             item["Source"] = new_source
@@ -333,6 +328,59 @@ def edit_button_click():
     save_button = tk.Button(edit_window, text="Save Changes", command=lambda: save_changes(edit_window, source, username, password, entry_edit_password.get(), entry_edit_username.get(), entry_edit_source.get()))
     save_button.grid(row=3, columnspan=2, padx=10, pady=10)
 
+def delete_password():
+    # Get the selected item(s) from the tree
+    selected_items = tree.selection()
+    
+    # Check if any item is selected
+    if not selected_items:
+        print("Please select a password to delete.")
+        return
+
+    # Assuming only one item can be selected for deletion
+    selected_item = selected_items[0]
+
+    delete_window = tk.Toplevel(root, width=500, height=300)
+    delete_window.title("Delete Password")
+
+    confirm_button = tk.Button(delete_window, text="Confirm", 
+                               command=lambda item=selected_item: delete_password_save(item, delete_window))
+    confirm_button.pack()
+
+    cancel_button = tk.Button(delete_window, text="Cancel", command=delete_window.destroy)
+    cancel_button.pack()
+
+def delete_password_save(selected_item, delete_window):
+    print("Deleting...")
+    
+    # Get the values of the selected item
+    values = tree.item(selected_item, "values")
+    if not values:
+        print("Invalid selection.")
+        return
+
+    # Extract relevant data (source, username, password)
+    source = values[1]
+    username = values[2]
+    print(source)
+    print(username)
+    # Delete the password from the list
+    data = load_passwords()
+    for item in data:
+        if item["Source"] == source and item["Username"] == username:
+            data.remove(item)
+            break
+
+    # Update JSON file
+    with open("passwords.json", "w") as json_file:
+        json.dump(data, json_file)
+
+    # Close the delete password window
+    delete_window.destroy()
+
+    
+    # Refresh the tree to reflect changes
+    display_passwords()
 
 
 # Create the main application window---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -430,6 +478,11 @@ load_button.pack()
 # Button to edit the password
 edit_button = tk.Button(frame2, text="Edit Password", command=edit_button_click)
 edit_button.pack(pady=5)
+
+# Button to delete the password
+edit_button = tk.Button(frame2, text="Delete Password", command=delete_password)
+edit_button.pack(pady=5)
+
 
 
 # Bind keys "q" and "w" to paste_user() and paste_password() functions
