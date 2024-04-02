@@ -3,6 +3,8 @@ import string
 import tkinter as tk
 from tkinter import ttk
 import random
+from cryptography.fernet import Fernet
+
 
 def login(email_master, password_master):
     try:
@@ -382,6 +384,32 @@ def delete_password_save(selected_item, delete_window):
     # Refresh the tree to reflect changes
     display_passwords()
 
+def generate_key():
+    key = Fernet.generate_key()
+    with open("myKey.key", "wb") as key_file:
+        key_file.write(key)
+
+    key_file.write(key)
+
+def load_key():
+    return open("myKey.key", "rb").read()
+
+def encrypt_passwords():
+    f = Fernet(load_key())
+    with open("passwords.json", "rb") as file:
+        encrypted_data = f.encrypt(file.read())
+    with open("passwords_encrypted.txt", "wb") as file:
+        file.write(encrypted_data)
+        
+
+def decrypt_passwords():
+    f = Fernet(load_key())
+    with open("passwords_encrypted.txt", "rb") as file:
+        decrypted_data = f.decrypt(file.read())
+    with open("passwords.json", "wb") as file:
+        file.write(decrypted_data)
+        return decrypted_data
+
 
 # Create the main application window---------------------------------------------------------------------------------------------------------------------------------------------------------------
 root = tk.Tk()
@@ -524,6 +552,12 @@ entry3_2.pack(side="right",pady=10)
 
 button_login = tk.Button(frame4_inner, text="Login", font=("Arial", 10), command= lambda : login(entry3_1.get(), entry3_2.get()))
 button_login.pack(side="bottom",pady=50)
+
+button_decrypt = tk.Button(frame4_inner, text="decrypt the passwords", font=("Arial", 10), command= lambda : decrypt_passwords())
+button_decrypt.pack(side="bottom",pady=10)
+
+button_encrypt = tk.Button(frame4_inner, text="encrypt the passwords", font=("Arial", 10), command= lambda : encrypt_passwords())
+button_encrypt.pack(side="bottom",pady=10)
 
 # fifth tab----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 frame5 = ttk.Frame(notebook)
