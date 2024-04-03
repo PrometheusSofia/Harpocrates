@@ -1,0 +1,53 @@
+{
+    "labels": {
+      "password_manager": "Password Manager",
+      "username": "Username:",
+      "password": "Password:",
+      "source": "Source:",
+      "generate_password": "Generate Password:",
+      "copy_generated_password": "Copy Generated Password",
+      "search": "Search",
+      "index": "Index",
+      "load_passwords": "Load Passwords",
+      "edit_password": "Edit Password",
+      "delete_password": "Delete Password",
+      "settings": "Settings",
+      "mode": " mode",
+      "language": "Language:",
+      "email": "Email:",
+      "login": "Login",
+      "decrypt_passwords": "Decrypt the Passwords",
+      "encrypt_passwords": "Encrypt the Passwords",
+      "password_strength": "Password Strength",
+      "characters_containing": "Characters containing: "
+    },
+    "buttons": {
+      "delete_password": "Delete Password",
+      "edit_password": "Edit Password",
+      "load_passwords":"Load Passwords",
+      "generate_password": "Generate Password!",
+      "create_password": "Create Password!",
+      "copy_generated_password": "Copy Generated Password",
+      "login": "Login",
+      "decrypt_passwords": "Decrypt the passwords",
+      "encrypt_passwords": "Encrypt the passwords",
+      "search": "Search",
+      "change_language": "Change Language"
+    },
+    "tabs": {
+      "create_password": "Create Password",
+      "load_passwords": "Load Passwords",
+      "settings": "Settings",
+      "login": "Login",
+      "password_strength": "Password Strength"
+    }
+    ,"texts": {
+      "lowercase": "Lowercase",
+      "uppercase": "Uppercase",
+      "numbers": "Numbers",
+      "special_characters": "Special Characters",
+      "containing": "Containing: ",
+      "Characters": "characters"
+    }
+  }
+  
