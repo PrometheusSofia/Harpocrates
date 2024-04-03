@@ -41,5 +41,13 @@
       "login": "Entrar",
       "password_strength": "Força da Senha"
     }
+    ,"texts": {
+      "lowercase": "Minuscula",
+      "uppercase": "Maiúscula",
+      "numbers": "Números",
+      "special_characters": "Caracteres Especiais",
+      "containing": "Caracteres contidos: ",
+      "characters": "caracteres"
+    }
   }
   

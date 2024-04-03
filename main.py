@@ -70,7 +70,7 @@ def toggle_theme(toggle_name):
 
 def change_theme_json(change_theme):
     # Rewrite the settings.json file with the theme value changed
-    toggle_button.configure(text=next_theme() + " mode")
+    toggle_button3.configure(text=next_theme() + " mode")
     with open("settings.json", "r") as json_file:
         data = json.load(json_file)
     data[0] = "theme: " + change_theme
@@ -204,18 +204,25 @@ def button_search():
     print("end")
 
 def check_password(password):
+    if check_language() == "English":
+        with open("languages/English.json", "r", encoding="utf-8") as file:
+            language = json.load(file)
+    elif check_language() == "Portuguese":
+        with open("languages/Portuguese.json", "r", encoding="utf-8") as file:
+            language = json.load(file)
     characteristics = []
     
     if any(char.islower() for char in password):
-        characteristics.append('lowercase')
+        characteristics.append(language["texts"]["lowercase"])
     if any(char.isupper() for char in password):
-        characteristics.append('uppercase')
+        characteristics.append(language["texts"]["uppercase"])
     if any(char.isdigit() for char in password):
-        characteristics.append('numbers')
+        characteristics.append(language["texts"]["numbers"])
     if any(char in string.punctuation for char in password):
-        characteristics.append('special characters')
+        characteristics.append(language["texts"]["special_characters"])
 
     message = "containing {} characters".format(len(password))
+    #message = language["texts"]["containing"] + " {} " + language["texts"]["characters"]
     if characteristics:
         message += ", " + ", ".join(characteristics)
     
@@ -456,7 +463,6 @@ def change_the_ui_language():
         apply_language(portuguese_language)
 
 def apply_language(language_data):
-    print(language_data)
     # Apply translated text to labels and buttons
     label_username.config(text=language_data["labels"]["username"])
     label_password.config(text=language_data["labels"]["password"])
@@ -471,21 +477,16 @@ def apply_language(language_data):
     load_button.config(text=language_data["buttons"]["load_passwords"])
     edit_button.config(text=language_data["buttons"]["edit_password"])
     delete_button.config(text=language_data["buttons"]["delete_password"])
-    # i was in the third tab
-    
-    
-    
-    
-    
-    #button_search.config(text=language_data["buttons"]["search"])
-    #load_button.config(text=language_data["buttons"]["load_passwords"])
-    #edit_button.config(text=language_data["buttons"]["edit_password"])
-    #toggle_button.config(text=language_data["buttons"]["mode"] + " mode")
-    #button_change_language.config(text=language_data["buttons"]["change_language"])
-    #button_login.config(text=language_data["buttons"]["login"])
-    #button_decrypt.config(text=language_data["buttons"]["decrypt_passwords"])
-    #button_encrypt.config(text=language_data["buttons"]["encrypt_passwords"])
-    # Apply translated text to tabs
+    label3_2.config(text=language_data["labels"]["language"] + ":" + check_language()) 
+    button_change_language.config(text=language_data["buttons"]["change_language"])
+    label4_1.config(text=language_data["labels"]["email"])
+    label4_2.config(text=language_data["labels"]["password"])
+    button_login.config(text=language_data["buttons"]["login"])
+    button_decrypt.config(text=language_data["buttons"]["decrypt_passwords"])
+    button_encrypt.config(text=language_data["buttons"]["encrypt_passwords"])
+    label5_1.config(text=language_data["labels"]["password_strength"])
+    label5_2.config(text=language_data["labels"]["characters_containing"])
+    #tabs------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     notebook.tab(0, text=language_data["tabs"]["create_password"])
     notebook.tab(1, text=language_data["tabs"]["load_passwords"])
     notebook.tab(2, text=language_data["tabs"]["settings"])
@@ -611,8 +612,8 @@ frame3_inner = tk.Frame(frame3)
 frame3_inner.pack(padx=20, pady=20)
 
 # Create a Checkbutton widget for theme switching in the third tab
-toggle_button = tk.Button(frame3_inner, text=next_theme() + " mode", command= lambda : toggle_theme(next_theme()))
-toggle_button.pack(pady=10)
+toggle_button3 = tk.Button(frame3_inner, text=next_theme() + " mode", command= lambda : toggle_theme(next_theme()))
+toggle_button3.pack(pady=10)
 
 label3_2 = tk.Label(frame3_inner, text="Language:" + check_language(), font=("Arial", 10))
 label3_2.pack(side="left",pady=10)
@@ -629,17 +630,17 @@ notebook.add(frame4, text='Login')
 frame4_inner = tk.Frame(frame4)
 frame4_inner.pack(padx=80, pady=80)
 
-label4_2 = tk.Label(frame4_inner, text="Email:", font=("Arial", 10))
-label4_2.pack(side="left",pady=10)
+label4_1 = tk.Label(frame4_inner, text="Email:", font=("Arial", 10))
+label4_1.pack(side="left",pady=10)
 
-entry3_1 = tk.Entry(frame4_inner, font=("Arial", 10))
-entry3_1.pack(side="left",pady=10)
+entry4_1 = tk.Entry(frame4_inner, font=("Arial", 10))
+entry4_1.pack(side="left",pady=10)
 
 label4_2 = tk.Label(frame4_inner, text="Password:", font=("Arial", 10))
 label4_2.pack(side="left",pady=10)
 
-entry3_2 = tk.Entry(frame4_inner, font=("Arial", 10))
-entry3_2.pack(side="right",pady=10)
+entry4_2 = tk.Entry(frame4_inner, font=("Arial", 10))
+entry4_2.pack(side="right",pady=10)
 
 button_login = tk.Button(frame4_inner, text="Login", font=("Arial", 10), command= lambda : login(entry3_1.get(), entry3_2.get()))
 button_login.pack(side="bottom",pady=50)

@@ -41,5 +41,13 @@
       "login": "Login",
       "password_strength": "Password Strength"
     }
+    ,"texts": {
+      "lowercase": "Lowercase",
+      "uppercase": "Uppercase",
+      "numbers": "Numbers",
+      "special_characters": "Special Characters",
+      "containing": "Containing: ",
+      "Characters": "characters"
+    }
   }
   
