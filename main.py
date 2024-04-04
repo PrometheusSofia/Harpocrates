@@ -4,7 +4,8 @@ import tkinter as tk
 from tkinter import ttk
 import random
 from cryptography.fernet import Fernet
-
+import requests
+import hashlib
 
 def login(email_master, password_master):
     try:
@@ -123,6 +124,15 @@ def display_passwords():
         password_text = password["Password"]
         tree.insert("", "end", values=(idx, source, username, "*" * len(password_text)))
     
+def get_password(index):
+    passwords = load_passwords()
+    return passwords[index-1]["Password"]
+
+def paste_source():
+    # Paste the source from clipboard into the entry field
+    entry_source.delete(0, "end")
+    entry_source.insert(0, root.clipboard_get())
+
 def paste_user():
     # Paste the username from clipboard into the entry field
     entry_username.delete(0, "end")
@@ -309,7 +319,7 @@ def edit_button_click():
     # Extract relevant data (source, username, password)
     source = values[1]
     username = values[2]
-    password = values[3]
+    password = get_password(int(values[0]))
 
     # Create a new toplevel window for editing
     edit_window = tk.Toplevel(root)
@@ -418,7 +428,8 @@ def decrypt_passwords():
         return decrypted_data
 
 def load_language(language_code):
-    with open(f"{language_code}.json", "r", encoding="utf-8") as file:
+    print(f"Languages/{language_code}.json")
+    with open(f"Languages/{language_code}.json", "r", encoding="utf-8") as file:
         return json.load(file)
 
 def check_language():
@@ -428,7 +439,7 @@ def check_language():
             return "English"
         elif settings[1] == "Language: Portuguese":
             return "Portuguese"
-    
+
 def change_language_window():
     language_window = tk.Toplevel(root)
     language_window.title("Change language")
@@ -493,11 +504,94 @@ def apply_language(language_data):
     notebook.tab(3, text=language_data["tabs"]["login"])
     notebook.tab(4, text=language_data["tabs"]["password_strength"])
         
-        
+def verify_password_window():
+    # Get the selected item(s) from the tree
+    selected_items = tree.selection()
+    if not selected_items:
+        password_entry_verify()
+        return
+
+    # We'll assume only one item can be selected for editing
+    selected_item = selected_items[0]
+
+    # Get the values of the selected item
+    values = tree.item(selected_item, "values")
+    if not values:
+        print("Invalid selection.")
+        return
+
+    # Extract relevant data (source, username, password)
+    index = int(values[0]) - 1 
+
+    passwords = load_passwords()
+
+
+    verify_password_window = tk.Toplevel(root)
+    verify_password_window.title("Verify Password")
+
+    button_verify_password = tk.Button(verify_password_window, text="Verify Password", command=lambda: (verify_password(passwords[index]["Password"],verify_password_window)))
+    button_verify_password.pack()
+
+def password_entry_verify():
+    verify_password_window = tk.Toplevel(root)
+    verify_password_window.title("Verify Password")
+
+    language = load_language(check_language())
+    print(language["labels"]["Write_the_password_to_verify_or_select_in_the_tree_for_the_password"])
+
+    label_password_entry_verify = tk.Label(verify_password_window, text = language["labels"]["Write_the_password_to_verify_or_select_in_the_tree_for_the_password"] + " :")
+    label_password_entry_verify.pack(pady=5)
+
+    password_entry_verify = tk.Entry(verify_password_window)
+    password_entry_verify.pack(pady=5)
+
+    button_verify_password = tk.Button(verify_password_window, text="Verify Password", command=lambda: (verify_password(password_entry_verify.get(),verify_password_window)))
+    button_verify_password.pack()
+
+def verify_password(password, window):
+    print("Verifying password: " + password)
+    # Hash the password using SHA1 algorithm
+    hashed_password = hashlib.sha1(password.encode()).hexdigest().upper()
+    
+    # Take the first 5 characters of the hashed password as the prefix
+    prefix = hashed_password[:5]
+    
+    # Send a request to the "Have I Been Pwned" API with the prefix
+    response = requests.get(f'https://api.pwnedpasswords.com/range/{prefix}')
+    
+    # Check if the response was successful
+    if response.status_code == 200:
+        # Check if the suffix of the hashed password exists in the response
+        suffixes = (line.split(':') for line in response.text.splitlines())
+        for suffix, count in suffixes:
+            if hashed_password[5:] == suffix:
+                print("The password has been breached", count)
+                pop_window(f"The password has been breached {count} times. It is not safe to use.")
+                window.destroy() 
+                return f"The password has been breached {count} times. It is not safe to use."
+            
+           
+        return "The password has not been breached. It's safe to use."
+    else:
+        print("Failed to check password breach status. Please try again later.")
+        pop_window(f"The password has been breached {count} times. It is not safe to use.")
+        window.destroy()
+        return "Failed to check password breach status. Please try again later."
+    
+def pop_window(text):
+    popup = tk.Tk()
+    popup.wm_title("Warning")
+    label = tk.Label(popup, text=text)
+    label.pack(side="top", fill="x", pady=10)
+    B1 = tk.Button(popup, text="Okay", command=popup.destroy)
+    B1.pack()
+    popup.mainloop()
+
 
 # Create the main application window---------------------------------------------------------------------------------------------------------------------------------------------------------------
 root = tk.Tk()
 root.title("Password Manager")
+
 
 
 # Change the icon of the application
@@ -595,11 +689,15 @@ edit_button.pack(pady=5)
 delete_button = tk.Button(frame2, text="Delete Password", command=delete_password)
 delete_button.pack(pady=5)
 
-
+label2_2 = tk.Label(frame2_inner, text="to copy the user press 'q', to copy the password press 'w'", font=("Arial", 10))
+label2_2.pack(side="left",pady=10)
 
 # Bind keys "q" and "w" to paste_user() and paste_password() functions
-root.bind("q", paste_user)
+root.bind("q", print("q"))
 root.bind("w", paste_password)
+
+button_verify_password = tk.Button(frame2_inner, text="Verify Password", font=("Arial", 10), command=verify_password_window)
+button_verify_password.pack(pady=10)
 
 # third tab----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 frame3 = ttk.Frame(notebook)
@@ -621,8 +719,6 @@ label3_2.pack(side="left",pady=10)
 button_change_language = tk.Button(frame3_inner, text="Change Language", font=("Arial", 10), command=change_language_window)
 button_change_language.pack(side="right",pady=10)
 
-
-
 # fourth tab----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 frame4 = ttk.Frame(notebook)
 notebook.add(frame4, text='Login')
@@ -642,7 +738,7 @@ label4_2.pack(side="left",pady=10)
 entry4_2 = tk.Entry(frame4_inner, font=("Arial", 10))
 entry4_2.pack(side="right",pady=10)
 
-button_login = tk.Button(frame4_inner, text="Login", font=("Arial", 10), command= lambda : login(entry3_1.get(), entry3_2.get()))
+button_login = tk.Button(frame4_inner, text="Login", font=("Arial", 10), command= lambda : login(entry4_1.get(), entry4_2.get()))
 button_login.pack(side="bottom",pady=50)
 
 button_decrypt = tk.Button(frame4_inner, text="decrypt the passwords", font=("Arial", 10), command= lambda : decrypt_passwords())

@@ -19,7 +19,8 @@
       "decrypt_passwords": "Descriptografar as Senhas",
       "encrypt_passwords": "Criptografar as Senhas",
       "password_strength": "Força da Senha",
-      "characters_containing": "Caracteres contidos: "
+      "characters_containing": "Caracteres contidos: ",
+      "Write_the_password_to_verify_or_select_in_the_tree_for_the_password" : "Escreva a senha para verificar ou selecione na árvore para a senha"
     },
     "buttons": {
       "delete_password": "Apagar Senha",
