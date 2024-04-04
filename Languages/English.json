@@ -19,7 +19,8 @@
       "decrypt_passwords": "Decrypt the Passwords",
       "encrypt_passwords": "Encrypt the Passwords",
       "password_strength": "Password Strength",
-      "characters_containing": "Characters containing: "
+      "characters_containing": "Characters containing: ",
+      "Write_the_password_to_verify_or_select_in_the_tree_for_the_password" : "Write the password to verify or select in the tree for the password"
     },
     "buttons": {
       "delete_password": "Delete Password",
