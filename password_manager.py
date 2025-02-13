@@ -1,13 +1,23 @@
 import json
 import string
 import secrets
+import os
+
+
+DATA_PATH = "data/passwords.json"
 
 def load_passwords():
+    os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
+
     try:
-        with open("data/passwords.json", "r") as file:
+        with open(DATA_PATH, "r") as file:
             return json.load(file)
     except (FileNotFoundError, json.JSONDecodeError):
+        # If file doesn't exist or is corrupted, create an empty JSON file
+        with open(DATA_PATH, "w") as file:
+            json.dump([], file, indent=4)  # Pretty-print JSON for readability
         return []
+
 
 def save_password(password_data):
     passwords = load_passwords()
@@ -44,12 +54,16 @@ def generate_password(length: int) -> str:
     return ''.join(password)
 
 def check_password_strength(password):
+    password = str(password)  
+    SPECIAL_CHARACTERS = "!@#$%^&*()-_=+[]{}|;:'\",.<>?/\\`~"
+
     characteristics = {
         "lowercase": any(char.islower() for char in password),
         "uppercase": any(char.isupper() for char in password),
         "numbers": any(char.isdigit() for char in password),
-        "special": any(char in string.punctuation for char in password)
+        "special": any(char in SPECIAL_CHARACTERS for char in password)
     }
+    print(characteristics)
     return characteristics
 
 def delete_password(source, username):

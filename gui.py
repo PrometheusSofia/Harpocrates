@@ -101,7 +101,7 @@ class RunWindow(QWidget):
         self.password_table.setColumnWidth(3, 250)  # Password column
 
     def check_password_strength(self, row):
-        password_item = self.password_table.item(row, 2)  # Column 2 is Password
+        password_item = self.password_table.item(row, 3)  # Column 3 is Password
 
         if not password_item:
             QMessageBox.warning(self, "Error", "No password found in this row.")
@@ -166,7 +166,7 @@ class RunWindow(QWidget):
             return
 
         selected_row = selected_rows[0].row()  # Get the first selected row
-        password_item = self.password_table.item(selected_row, 2)  # Column 2 is the Password column
+        password_item = self.password_table.item(selected_row, 3)  # Column 3 is the Password column
 
         if password_item:
             password = password_item.text()
