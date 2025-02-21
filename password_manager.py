@@ -15,7 +15,7 @@ def load_passwords():
     except (FileNotFoundError, json.JSONDecodeError):
         # If file doesn't exist or is corrupted, create an empty JSON file
         with open(DATA_PATH, "w") as file:
-            json.dump([], file, indent=4)  # Pretty-print JSON for readability
+            json.dump([], file, indent=4)  
         return []
 
 

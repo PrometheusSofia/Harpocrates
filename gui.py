@@ -1,9 +1,11 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QLabel,
-    QPushButton, QMessageBox, QHBoxLayout, QTabWidget, QLineEdit, QApplication, 
+    QPushButton, QMessageBox, QHBoxLayout, QTabWidget, QLineEdit, QApplication, QInputDialog  
 )
 from PyQt5.QtGui import QClipboard, QIcon
 from password_manager import load_passwords, save_password, generate_password, check_password_strength, delete_password
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
+
 
 
 class RunWindow(QWidget):
@@ -15,19 +17,33 @@ class RunWindow(QWidget):
         self.setWindowTitle("Password Manager")
         self.setGeometry(100, 100, 800, 400)
 
-            # Set the window icon from the "data" folder
-        self.setWindowIcon(QIcon("data/secret.ico"))  
+        self.setWindowIcon(QIcon("data/secret.ico"))
 
         layout = QVBoxLayout()
+
+        # Create a horizontal layout for top-left buttons
+        button_layout = QHBoxLayout()
+
+        # Create Folder Button
+        create_folder_button = QPushButton("Create Folder")
+        create_folder_button.clicked.connect(self.create_folder_action)
+        button_layout.addWidget(create_folder_button)
+
+        # Delete Folder Button
+        delete_folder_button = QPushButton("Delete Folder")
+        delete_folder_button.clicked.connect(self.delete_folder_action)
+        button_layout.addWidget(delete_folder_button)
+
+        # Add button layout at the top
+        layout.addLayout(button_layout)
+
+        # Tab Widget
         self.tab_widget = QTabWidget()
 
-        # Tab 1: View Stored Passwords
+        # Tabs
         self.init_password_table_tab()
-
-        # Tab 2: Password Creation
         self.init_password_creation_tab()
 
-        # Add tab widget to the main layout
         layout.addWidget(self.tab_widget)
         self.setLayout(layout)
 
@@ -40,17 +56,17 @@ class RunWindow(QWidget):
         title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;")
         tab_layout.addWidget(title_label)
 
-        # Password Table
-        self.password_table = QTableWidget()
-        self.password_table.setColumnCount(4)  # 4 columns (Strength, Source, Username, Password)
-        self.password_table.setHorizontalHeaderLabels(["Strength", "Source", "Username", "Password"])
-        self.password_table.horizontalHeader().setStretchLastSection(True)
-        self.password_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.password_table.setSelectionMode(QTableWidget.SingleSelection)
-        self.password_table.itemSelectionChanged.connect(self.update_button_states)
+        # Replace QTableWidget with QTreeWidget
+        self.password_tree = QTreeWidget()
+        self.password_tree.setColumnCount(4)  # Folder, Source, Username, Password
+        self.password_tree.setHeaderLabels(["Strength", "Source", "Username", "Password"])
+        self.password_tree.itemSelectionChanged.connect(self.update_copy_button_state)
+
+        # Expand and collapse functionality
+        self.password_tree.setExpandsOnDoubleClick(True)
 
         self.refresh_password_table()
-        tab_layout.addWidget(self.password_table)
+        tab_layout.addWidget(self.password_tree)
 
         # Button Layout (Copy + Delete)
         button_layout = QHBoxLayout()
@@ -68,37 +84,42 @@ class RunWindow(QWidget):
         button_layout.addWidget(self.delete_button)
 
         button_layout.addStretch(1)  # Align buttons properly
+        expand_button = QPushButton("Expand All")
+        expand_button.clicked.connect(lambda: self.password_tree.expandAll())
+
+        collapse_button = QPushButton("Collapse All")
+        collapse_button.clicked.connect(lambda: self.password_tree.collapseAll())
+
+        button_layout.addWidget(expand_button)
+        button_layout.addWidget(collapse_button)
 
         tab_layout.addLayout(button_layout)
         password_tab.setLayout(tab_layout)
         self.tab_widget.addTab(password_tab, "View Passwords")
 
     def refresh_password_table(self):
-        passwords = load_passwords()
-        self.password_table.setRowCount(len(passwords))
-        self.password_table.setColumnCount(4)  # Ensure there are 4 columns
+        self.password_tree.clear()  # Clear existing data
 
-        # Update column headers to reflect the new order
-        self.password_table.setHorizontalHeaderLabels(["Strength", "Source", "Username", "Password"])
+        passwords = load_passwords()  # Load saved passwords
+        folder_dict = {}  # Store folder items
 
-        for row, entry in enumerate(passwords):
-            # Create Strength button inside the table (Column 0)
-            strength_button = QPushButton("🔍")  
-            strength_button.setFixedSize(40, 25)  
-            strength_button.clicked.connect(lambda _, r=row: self.check_password_strength(r))
+        for entry in passwords:
+            folder_name = entry.get("Folder", "Default")  # Default if no folder
+            source = entry.get("Source", "")
+            username = entry.get("Username", "")
+            password = entry.get("Password", "")
 
-            self.password_table.setCellWidget(row, 0, strength_button)  
+            # If the folder doesn't exist in the tree, create it
+            if folder_name not in folder_dict:
+                folder_item = QTreeWidgetItem(self.password_tree, [folder_name])
+                folder_item.setExpanded(True)  # Expand folders by default
+                folder_dict[folder_name] = folder_item
 
-            # Populate the remaining columns
-            self.password_table.setItem(row, 1, QTableWidgetItem(entry.get("Source", "")))
-            self.password_table.setItem(row, 2, QTableWidgetItem(entry.get("Username", "")))
-            self.password_table.setItem(row, 3, QTableWidgetItem(entry.get("Password", "")))
+            # Add password as a child of the folder
+            child_item = QTreeWidgetItem(folder_dict[folder_name], ["🔍", source, username, password])
+            folder_dict[folder_name].addChild(child_item)
 
-        # Adjust column widths (Strength first, then Source, Username, Password)
-        self.password_table.setColumnWidth(0, 60)   # Strength column (smaller)
-        self.password_table.setColumnWidth(1, 200)  # Source column
-        self.password_table.setColumnWidth(2, 200)  # Username column
-        self.password_table.setColumnWidth(3, 250)  # Password column
+        self.password_tree.expandAll()  # Expand all folders initially
 
     def check_password_strength(self, row):
         password_item = self.password_table.item(row, 3)  # Column 3 is Password
@@ -118,65 +139,101 @@ class RunWindow(QWidget):
         )
 
         QMessageBox.information(self, "Password Strength", strength_message)
-    
-    def update_button_states(self):
-        selected_rows = self.password_table.selectionModel().selectedRows()
-        has_selection = bool(selected_rows)
-        
-        self.copy_button.setEnabled(has_selection)
-        self.delete_button.setEnabled(has_selection)
 
-    def delete_selected_password(self):
-        selected_rows = self.password_table.selectionModel().selectedRows()
-        if not selected_rows:
+    def create_folder_action(self):
+        folder_name, ok = QInputDialog.getText(self, "Create Folder", "Enter folder name:")
+
+        if ok and folder_name.strip():
+            folder_name = folder_name.strip()
+
+            # Check if the folder already exists
+            for i in range(self.password_tree.topLevelItemCount()):
+                if self.password_tree.topLevelItem(i).text(0) == folder_name:
+                    QMessageBox.warning(self, "Error", "Folder already exists.")
+                    return
+
+            # Add the folder to the tree
+            folder_item = QTreeWidgetItem(self.password_tree, [folder_name])
+            folder_item.setExpanded(True)
+
+    def delete_folder_action(self):
+        selected_items = self.password_tree.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "Error", "No folder selected.")
             return
 
-        selected_row = selected_rows[0].row()
-        source_item = self.password_table.item(selected_row, 1)  
-        username_item = self.password_table.item(selected_row, 2)  
+        selected_item = selected_items[0]
 
-        if not source_item or not username_item:
-            QMessageBox.warning(self, "Error", "Could not retrieve Source and Username.")
+        if selected_item.parent() is not None:  # Ensure it's a folder
+            QMessageBox.warning(self, "Error", "You must select a folder to delete.")
             return
-
-        source = source_item.text()
-        username = username_item.text()
 
         # Confirm deletion
-        confirm = QMessageBox.question(self, "Delete Password", 
+        confirm = QMessageBox.question(self, "Delete Folder",
+                                       f"Are you sure you want to delete the folder '{selected_item.text(0)}'?",
+                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if confirm == QMessageBox.Yes:
+            if selected_item.childCount() > 0:
+                QMessageBox.warning(self, "Error", "Folder is not empty.")
+                return
+
+            index = self.password_tree.indexOfTopLevelItem(selected_item)
+            self.password_tree.takeTopLevelItem(index)
+
+
+    def delete_selected_password(self):
+        selected_items = self.password_tree.selectedItems()
+        if not selected_items:
+            return
+
+        selected_item = selected_items[0]
+        if selected_item.parent() is None:  # Skip folders
+            return
+
+        source = selected_item.text(1)  # Column 1 = Source
+        username = selected_item.text(2)  # Column 2 = Username
+
+        confirm = QMessageBox.question(self, "Delete Password",
                                     f"Are you sure you want to delete the password for {source} ({username})?",
                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if confirm == QMessageBox.Yes:
             success = delete_password(source, username)
-
             if success:
                 QMessageBox.information(self, "Success", "Password deleted successfully.")
                 self.refresh_password_table()
             else:
-                QMessageBox.warning(self, "Error", "Failed to delete password. Entry not found.")
+                QMessageBox.warning(self, "Error", "Failed to delete password.")
 
     def update_copy_button_state(self):
-        selected_rows = self.password_table.selectionModel().selectedRows()
-        self.copy_button.setEnabled(bool(selected_rows))  # Enable if a row is selected
+        selected_items = self.password_tree.selectedItems()
+        
+        # Ensure we have a selection and it's not a folder
+        has_selection = bool(selected_items) and selected_items[0].parent() is not None  
+
+        self.copy_button.setEnabled(has_selection)
+        self.delete_button.setEnabled(has_selection)
 
     def copy_password_to_clipboard(self):
-        selected_rows = self.password_table.selectionModel().selectedRows()
-        if not selected_rows:
+        selected_items = self.password_tree.selectedItems()
+        if not selected_items:
             return
 
-        selected_row = selected_rows[0].row()  # Get the first selected row
-        password_item = self.password_table.item(selected_row, 3)  # Column 3 is the Password column
+        selected_item = selected_items[0]  # Get selected item
+        if selected_item.parent() is None:  # Skip folders
+            return
 
-        if password_item:
-            password = password_item.text()
-            clipboard = QApplication.clipboard()
-            clipboard.setText(password, QClipboard.Clipboard)
-            QMessageBox.information(self, "Password Copied", "The password has been copied to the clipboard.")
+        password = selected_item.text(3)  # Column 3 = Password
+        clipboard = QApplication.clipboard()
+        clipboard.setText(password, QClipboard.Clipboard)
+
+        QMessageBox.information(self, "Password Copied", "The password has been copied to the clipboard.")
 
     def init_password_creation_tab(self):
         creation_tab = QWidget()
         tab_layout = QVBoxLayout()
+
 
         # Title Label
         title_label = QLabel("Password Creation")
@@ -204,6 +261,13 @@ class RunWindow(QWidget):
         generate_password_button.clicked.connect(self.generate_password_action)  
         tab_layout.addWidget(generate_password_button)
 
+        # Folder Input
+        self.folder_input = QLineEdit()
+        self.folder_input.setPlaceholderText("Enter folder (optional)")
+        tab_layout.addWidget(QLabel("Folder:"))
+        tab_layout.addWidget(self.folder_input)
+
+
         creation_tab.setLayout(tab_layout)
         self.tab_widget.addTab(creation_tab, "Password Creation")
 
@@ -211,29 +275,36 @@ class RunWindow(QWidget):
         try:
             source = self.source_input.text().strip()
             username = self.username_input.text().strip()
-            length = self.length_input.text().strip()
+            length = self.length_input.text().strip() or "14"  # Default to "14" if empty
+            folder = self.folder_input.text().strip() or "Default"  # Default to "Default"
 
             if not source or not username:
                 QMessageBox.warning(self, "Error", "Source and Username fields cannot be empty.")
                 return
 
-            length = int(length) if length else 14  # Convert length to integer
+            if not length.isdigit():  # Ensure it's a valid number
+                QMessageBox.warning(self, "Error", "Password length must be a number.")
+                return
+            
+            length = int(length)  # Convert to int
+            password = generate_password(length)  # Generate password
 
-            print(f"Generating password of length {length}")  # Debugging log
+            save_password({
+                "Folder": folder,
+                "Source": source,
+                "Username": username,
+                "Password": password
+            })
 
-            password = generate_password(length)  # Call the function
-            print(f"Generated password: {password}")  # Debugging log
-
-            save_password({"Source": source, "Username": username, "Password": password})
-
+            self.refresh_password_table()  # Refresh UI
             QMessageBox.information(self, "Password Generated", f"Generated Password: {password}")
 
-            # Refresh table in the first tab
-            self.refresh_password_table()
+            # Clear input fields after saving
             self.source_input.clear()
             self.username_input.clear()
             self.length_input.clear()
+            self.folder_input.clear()
 
         except Exception as e:
-            print(f"Error in generate_password_action: {e}")  # Log any exceptions
+            print(f"Error in generate_password_action: {e}")  # Debugging log
             QMessageBox.critical(self, "Error", f"Unexpected error: {e}")
